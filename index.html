@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Digital</title>
+    <style>
+        :root {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --bg-input: #2c2c2c;
+            --text-main: #f5f5f5;
+            --text-muted: #a0a0a0;
+            --border: #333;
+            --ps2-color: #0070d1;
+            --ps3-color: #003791;
+            --xbox-color: #107c10;
+            --wii-color: #00A2E8;
+            --whatsapp: #25D366;
+            --green-check: #27ae60;
+            --share-color: #9b59b6;
+        }
+        body.light-mode {
+            --bg-body: #f0f2f5;
+            --bg-card: #ffffff;
+            --bg-input: #e4e6eb;
+            --text-main: #1c1e21;
+            --text-muted: #65676b;
+            --border: #ddd;
+        }
+        * { box-sizing: border-box; font-family: system-ui, sans-serif; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s; }
+        body { background: var(--bg-body); color: var(--text-main); padding: 15px; padding-bottom: 90px; }
+
+        .header { max-width: 1300px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-text { font-size: clamp(20px, 4.5vw, 28px); color: var(--text-main); font-weight: 900; line-height: 1.1; }
+        .logo-subtext { font-size: clamp(10px, 2vw, 12px); color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .theme-toggle { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 18px; }
+
+        #home-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+        .home-title { font-size: 28px; margin-bottom: 10px; font-weight: 900; }
+        .home-subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 16px; }
+        
+        .console-grid { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; }
+        .console-card { width: 240px; height: 260px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.4); transition: transform 0.2s, box-shadow 0.2s; color: white; position: relative; overflow: hidden; }
+        .console-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        
+        .card-ps2 { background: linear-gradient(135deg, #003791 0%, #0070d1 100%); }
+        .card-ps3 { background: linear-gradient(135deg, #000000 0%, #003791 100%); }
+        .card-xbox { background: linear-gradient(135deg, #054b05 0%, #107c10 100%); }
+        .card-wii { background: linear-gradient(135deg, #007bb5 0%, #00A2E8 100%); }
+
+        .console-img-container { width: 140px; height: 140px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
+        .console-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.5)); }
+        .console-name { font-size: 22px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+
+        .ecosystem { display: none; animation: fadeIn 0.4s ease; }
+        .ecosystem.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .back-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+        .back-btn:hover { background: var(--bg-input); }
+
+        .promo-banner { max-width: 1300px; margin: 0 auto 15px auto; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; color: var(--text-main); font-size: 14px; display: none; }
+        .ps2-theme .promo-ps2 { display: block; background: rgba(0, 112, 209, 0.15); border-color: var(--ps2-color); }
+        .ps3-theme .promo-ps3 { display: block; background: rgba(0, 55, 145, 0.15); border-color: var(--ps3-color); }
+        .xbox-theme .promo-xbox { display: block; background: rgba(16, 124, 16, 0.15); border-color: var(--xbox-color); }
+        .wii-theme .promo-wii { display: block; background: rgba(0, 162, 232, 0.15); border-color: var(--wii-color); }
+
+        .search-container { max-width: 1300px; margin: 0 auto 15px auto; display: flex; flex-direction: column; gap: 10px; }
+        .filtros-ps2, .filtros-ps3, .filtros-xbox, .filtros-wii { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.2s; }
+        .filtros-ps2.oculto, .filtros-ps3.oculto, .filtros-xbox.oculto, .filtros-wii.oculto { display: none; }
+
+        .search-row { display: flex; gap: 10px; }
+        .search-bar { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-size: 16px; outline: none; }
+        .btn-refresh { background: #e67e22; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; font-size: 18px; }
+        
+        .tabs-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; white-space: nowrap; }
+        .tab-btn.active { color: white; }
+
+        .categories { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .categories::-webkit-scrollbar { display: none; }
+        .cat-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        
+        .ps2-theme .active { background: var(--ps2-color) !important; border-color: var(--ps2-color) !important; }
+        .ps3-theme .active { background: var(--ps3-color) !important; border-color: var(--ps3-color) !important; }
+        .xbox-theme .active { background: var(--xbox-color) !important; border-color: var(--xbox-color) !important; }
+        .wii-theme .active { background: var(--wii-color) !important; border-color: var(--wii-color) !important; }
+        
+        .tab-btn.promo-tab { color: #f39c12; border-color: #f39c12; }
+        .tab-btn.promo-tab.active { background: #f39c12 !important; color: white !important; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; max-width: 1300px; margin: 0 auto; }
+        .card { background: var(--bg-card); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border); }
+        .card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: var(--bg-input); display: block; cursor: zoom-in; }
+        .card-info { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-title { font-size: 13px; font-weight: bold; margin: 0 0 8px 0; flex-grow: 1; line-height: 1.3; }
+        .badge-new { background: #e67e22; color: white; font-size: 9px; padding: 2px 6px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+        .badge-top { background: #e74c3c; color: white; font-size: 9px; padding: 2px 6px; border-radius: 3px; margin-left: 4px; vertical-align: middle; font-weight: bold; }
+        .badge-promo { background: #f39c12; color: white; font-size: 9px; padding: 2px 6px; border-radius: 3px; margin-left: 4px; vertical-align: middle; font-weight: bold; }
+        
+        .btn-group { display: flex; flex-direction: column; gap: 6px; }
+        .btn { color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; text-align: center; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .ps2-theme .btn-add { background: var(--ps2-color); }
+        .ps3-theme .btn-add { background: var(--ps3-color); }
+        .xbox-theme .btn-add { background: var(--xbox-color); }
+        .wii-theme .btn-add { background: var(--wii-color); }
+        .btn-add.en-carrito { background: var(--green-check) !important; cursor: default; }
+        .btn-video { background: #ff0000; padding: 6px; font-size: 11px; }
+
+        .fab-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
+        .fab { border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 26px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; position: relative; }
+        .fab:active { transform: scale(0.9); }
+        .fab-cart { background: var(--whatsapp); color: white; }
+        .fab-cart .badge-count { position: absolute; top: -2px; right: -2px; background: #e74c3c; color: white; font-size: 13px; font-weight: bold; min-width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 0 6px; border: 2px solid var(--bg-body); }
+        .fab-share { background: var(--share-color); color: white; font-size: 24px; }
+
+        .cart-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .cart-overlay.open { opacity: 1; pointer-events: auto; }
+        .cart-panel { position: fixed; background: var(--bg-card); z-index: 201; display: flex; flex-direction: column; transition: transform 0.3s ease; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); left: 0; right: 0; bottom: 0; max-height: 85vh; border-radius: 20px 20px 0 0; transform: translateY(100%); }
+        .cart-panel.open { transform: translateY(0); }
+        
+        @media (min-width: 768px) {
+            .cart-panel { top: 0; bottom: 0; right: 0; left: auto; width: 400px; max-height: 100vh; border-radius: 20px 0 0 20px; transform: translateX(100%); }
+            .cart-panel.open { transform: translateX(0); }
+        }
+        
+        .cart-header { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid var(--border); }
+        .cart-header h2 { font-size: 20px; color: var(--whatsapp); }
+        .cart-close { background: transparent; border: none; color: var(--text-main); font-size: 30px; cursor: pointer; }
+        .cart-body { padding: 15px 18px; overflow-y: auto; flex-grow: 1; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .btn-remove { background: #d9534f; color: white; border: none; padding: 5px 10px; font-size: 13px; border-radius: 5px; cursor: pointer; }
+        .cart-footer { padding: 15px 18px 25px 18px; border-top: 1px solid var(--border); }
+        .cart-total { font-weight: bold; text-align: right; color: var(--whatsapp); margin-bottom: 12px; font-size: 20px; }
+        .cart-breakdown { text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+        .btn-pay { background: var(--whatsapp); color: #111; width: 100%; font-size: 16px; padding: 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1; }
+        .error-box { color: #e74c3c; background: rgba(231, 76, 60, 0.1); border: 1px solid #e74c3c; padding: 15px; border-radius: 8px; text-align: center; grid-column: 1 / -1; }
+
+        .zoom-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .zoom-modal.open { opacity: 1; pointer-events: auto; }
+        .zoom-img { max-width: 90%; max-height: 90vh; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .zoom-modal.open .zoom-img { transform: scale(1); }
+        .zoom-close { position: absolute; top: 20px; right: 25px; color: white; font-size: 40px; cursor: pointer; background: none; border: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-container" onclick="volverAlInicio()">
+            <div style="font-size: 30px;">🎮</div>
+            <div>
+                <div class="logo-text">Juegos Digitales</div>
+                <div class="logo-subtext">Catálogo Oficial</div>
+            </div>
+        </div>
+        <button id="theme-toggle" class="theme-toggle">🌙</button>
+    </div>
+
+    <div id="home-screen">
+        <div class="home-title">¿Qué consola querés explorar hoy?</div>
+        <div class="home-subtitle">Elegí una plataforma para ver su catálogo completo</div>
+        
+        <div class="console-grid">
+            <div class="console-card card-ps2" onclick="abrirConsola('ps2')">
+                <div class="console-img-container" id="container-ps2"><div style="font-size:60px;">🎮</div></div>
+                <div class="console-name">PlayStation 2</div>
+            </div>
+            <div class="console-card card-ps3" onclick="abrirConsola('ps3')">
+                <div class="console-img-container" id="container-ps3"><div style="font-size:60px;">🎮</div></div>
+                <div class="console-name">PlayStation 3</div>
+            </div>
+            <div class="console-card card-xbox" onclick="abrirConsola('xbox')">
+                <div class="console-img-container" id="container-xbox"><div style="font-size:60px;">🟢</div></div>
+                <div class="console-name">Xbox</div>
+            </div>
+            <div class="console-card card-wii" onclick="abrirConsola('wii')">
+                <div class="console-img-container" id="container-wii"><div style="font-size:60px;">🎮</div></div>
+                <div class="console-name">Nintendo Wii</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PS2 -->
+    <div id="eco-ps2" class="ecosystem ps2-theme">
+        <button class="back-btn" onclick="volverAlInicio()">← Volver al inicio</button>
+        <div class="promo-banner promo-ps2">🔥 Precios PS2: Llevá todos los juegos que quieras por solo $10.000.</div>
+        <div class="search-container">
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="todos" onclick="cambiarTabPS2('todos')">📀 Catálogo PS2</button>
+                <button class="tab-btn" data-tab="novedades" onclick="cambiarTabPS2('novedades')">🔥 Novedades</button>
+                <button class="tab-btn promo-tab" data-tab="promociones" onclick="cambiarTabPS2('promociones')">🎁 Promociones</button>
+                <button class="tab-btn" data-tab="emuladores" onclick="cambiarTabPS2('emuladores')">🖥️ Emuladores</button>
+            </div>
+            <div class="filtros-ps2" id="filtros-ps2">
+                <div class="search-row">
+                    <input type="text" id="search-ps2" class="search-bar" placeholder="🔍 Buscar juego de PS2..." oninput="buscarPS2(this.value)">
+                    <button class="btn-refresh" onclick="cargarTodo(true)">🔄</button>
+                </div>
+                <div class="categories" id="cats-ps2"></div>
+            </div>
+        </div>
+        <div id="grid-ps2" class="grid"><p class="loading">Cargando catálogo PS2... ⏳</p></div>
+    </div>
+
+    <!-- PS3 -->
+    <div id="eco-ps3" class="ecosystem ps3-theme">
+        <button class="back-btn" onclick="volverAlInicio()">← Volver al inicio</button>
+        <div class="promo-banner promo-ps3">🔥 Precios PS3: 1 juego x $1.500 | Combo de 3 juegos x $3.500</div>
+        <div class="search-container">
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="todos" onclick="cambiarTabPS3('todos')">💿 Catálogo PS3</button>
+                <button class="tab-btn" data-tab="novedades" onclick="cambiarTabPS3('novedades')">🔥 Novedades</button>
+                <button class="tab-btn promo-tab" data-tab="promociones" onclick="cambiarTabPS3('promociones')">🎁 Promociones</button>
+            </div>
+            <div class="filtros-ps3" id="filtros-ps3">
+                <div class="search-row">
+                    <input type="text" id="search-ps3" class="search-bar" placeholder="🔍 Buscar juego de PS3..." oninput="buscarPS3(this.value)">
+                    <button class="btn-refresh" onclick="cargarTodo(true)">🔄</button>
+                </div>
+                <div class="categories" id="cats-ps3"></div>
+            </div>
+        </div>
+        <div id="grid-ps3" class="grid"><p class="loading">Cargando catálogo PS3... ⏳</p></div>
+    </div>
+
+    <!-- XBOX -->
+    <div id="eco-xbox" class="ecosystem xbox-theme">
+        <button class="back-btn" onclick="volverAlInicio()">← Volver al inicio</button>
+        <div class="promo-banner promo-xbox">🔥 Precios Xbox: 1 juego x $1.500 | Combo de 3 juegos x $3.500</div>
+        <div class="search-container">
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="todos" onclick="cambiarTabXbox('todos')">🟢 Catálogo Xbox</button>
+                <button class="tab-btn" data-tab="novedades" onclick="cambiarTabXbox('novedades')">🔥 Novedades</button>
+                <button class="tab-btn promo-tab" data-tab="promociones" onclick="cambiarTabXbox('promociones')">🎁 Promociones</button>
+            </div>
+            <div class="filtros-xbox" id="filtros-xbox">
+                <div class="search-row">
+                    <input type="text" id="search-xbox" class="search-bar" placeholder="🔍 Buscar juego de Xbox..." oninput="buscarXbox(this.value)">
+                    <button class="btn-refresh" onclick="cargarTodo(true)">🔄</button>
+                </div>
+                <div class="categories" id="cats-xbox"></div>
+            </div>
+        </div>
+        <div id="grid-xbox" class="grid"><p class="loading">Cargando catálogo Xbox... ⏳</p></div>
+    </div>
+
+    <!-- WII -->
+    <div id="eco-wii" class="ecosystem wii-theme">
+        <button class="back-btn" onclick="volverAlInicio()">← Volver al inicio</button>
+        <div class="promo-banner promo-wii">🔥 Precios Wii: Llevá todos los juegos que quieras por solo $10.000.</div>
+        <div class="search-container">
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="todos" onclick="cambiarTabWii('todos')">🎮 Catálogo Wii</button>
+                <button class="tab-btn" data-tab="novedades" onclick="cambiarTabWii('novedades')">🔥 Novedades</button>
+                <button class="tab-btn promo-tab" data-tab="promociones" onclick="cambiarTabWii('promociones')">🎁 Promociones</button>
+            </div>
+            <div class="filtros-wii" id="filtros-wii">
+                <div class="search-row">
+                    <input type="text" id="search-wii" class="search-bar" placeholder="🔍 Buscar juego de Wii..." oninput="buscarWii(this.value)">
+                    <button class="btn-refresh" onclick="cargarTodo(true)">🔄</button>
+                </div>
+                <div class="categories" id="cats-wii"></div>
+            </div>
+        </div>
+        <div id="grid-wii" class="grid"><p class="loading">Cargando catálogo Wii... ⏳</p></div>
+    </div>
+
+    <div class="fab-container">
+        <button class="fab fab-share" onclick="compartirCatalogo()" title="Compartir catálogo">🔗</button>
+        <button id="cart-fab" class="fab fab-cart" onclick="abrirCarrito()">🛒<span id="cart-badge" class="badge-count" style="display:none;">0</span></button>
+    </div>
+
+    <div id="cart-overlay" class="cart-overlay" onclick="cerrarCarrito()"></div>
+
+    <aside id="cart-panel" class="cart-panel">
+        <div class="cart-header">
+            <h2>🛒 Mi Pedido</h2>
+            <button class="cart-close" onclick="cerrarCarrito()">&times;</button>
+        </div>
+        <div id="cart-items" class="cart-body">
+            <p style="text-align:center; color:var(--text-muted); margin-top:20px;">El carrito está vacío.</p>
+        </div>
+        <div class="cart-footer">
+            <div id="cart-breakdown" class="cart-breakdown"></div>
+            <div id="cart-total" class="cart-total"></div>
+            <button id="pay-btn" class="btn-pay" style="display:none;" onclick="pagarPorWhatsApp()">📱 Pagar por WhatsApp</button>
+        </div>
+    </aside>
+
+    <div id="zoom-modal" class="zoom-modal" onclick="cerrarZoom()">
+        <button class="zoom-close">&times;</button>
+        <img id="zoom-img" class="zoom-img" src="">
+    </div>
+
+    <script>
+        const USER_GITHUB = "pololaucha54-coder";
+        const REPO_PS2 = "covers-ps2";
+        const REPO_PS3_1 = "cover-ps3"; // Por si lo llamaste así
+        const REPO_PS3_2 = "covers-ps3"; // Por si lo llamaste con "s"
+        const REPO_XBOX = "covers-xbox";
+        const REPO_WII = "covers-Wii";
+        const REPO_ICONOS = "iconos"; 
+        
+        const WHATSAPP_NUMERO = "5492975015255";
+        
+        const PRECIO_PS2 = 10000; 
+        const PRECIO_PS3_UNITARIO = 1500;
+        const PRECIO_PS3_COMBO = 3500;
+        const PRECIO_XBOX_UNITARIO = 1500;
+        const PRECIO_XBOX_COMBO = 3500; 
+        const PRECIO_WII = 10000; 
+
+        let datosPS2 = [], datosPS3 = [], datosXbox = [], datosWii = [], carrito = [];
+        let ramaPS2 = "main", ramaPS3 = "main", ramaXbox = "main", ramaWii = "master", ramaIconos = "main";
+        let tabActualPS2 = 'todos', catActualPS2 = 'Todos', busquedaPS2 = '';
+        let tabActualPS3 = 'todos', catActualPS3 = 'Todos', busquedaPS3 = '';
+        let tabActualXbox = 'todos', catActualXbox = 'Todos', busquedaXbox = '';
+        let tabActualWii = 'todos', catActualWii = 'Todos', busquedaWii = '';
+
+        const PALABRAS_TOP = ['gta san andreas', 'gta vice city', 'gta v', 'gta iv', 'gta 5', 'budokai tenkaichi 3', 'god of war', 'pes 2014', 'resident evil 4', 'the last of us', 'uncharted', 'halo', 'gears of war', 'bioshock', 'borderlands', 'mario', 'zelda', 'super smash', 'wii sports'];
+        const PALABRAS_ACCION = ['god of war', 'silent hill', 'devil may cry', '50 cent', '007 quantum', '25 to life', 'god hand', 'batman begins', 'batman vengeance', 'bad boys', 'bully', 'canis canem', 'cold fear', 'terror', 'action', 'darkwatch', 'dead to rights', 'crime life', 'devil kings', 'el padrino', 'evil dead', 'extermination', 'fahrenheit', 'gladius', 'gauntlet seven sorrows', 'headhunter', 'just cause', 'iron man', 'juuouki', 'killer 7', 'killzone', 'mercenarios', 'mgs 3', 'metal gear', 'nightshade', 'okami', 'prince of persia', 'piratas del caribe', 'quake', 'red dead', 'robotech', 'rocky', 'scarface', 'shadow', 'shinobido', 'shinobi', 'spartan total warrior', 'spawn', 'suphonfilter', 'syphon filter', 'rainbow six', 'terminator', 'punisher', 'diabolik', 'splinter cell', 'transformers', 'true crime', 'turok', 'urban chaos', 'warriors orochi', 'yakuza', 'black', 'halo', 'gears of war', 'alan wake', 'dead space', 'crysis', 'bioshock', 'borderlands', 'tomb raider', 'the witcher', 'zelda', 'metroid', 'assassins creed', 'hitman', 'gta', 'the last of us', 'uncharted', 'infamous', 'killzone', 'resistance', 'heavy rain', 'beyond two souls', 'metal gear solid', 'demons souls', 'dark souls', 'bayonetta'];
+
+        async function cargarIconos() {
+            try {
+                const resRepo = await fetch(`https://api.github.com/repos/${USER_GITHUB}/${REPO_ICONOS}`);
+                if (resRepo.ok) ramaIconos = (await resRepo.json()).default_branch || "main";
+                const res = await fetch(`https://api.github.com/repos/${USER_GITHUB}/${REPO_ICONOS}/contents/?ref=${ramaIconos}`);
+                if (!res.ok) return;
+                const archivos = await res.json();
+                const extValidas = /\.(jpg|jpeg|png|gif|webp|svg|jfif|avif)$/i;
+                const imagenes = archivos.filter(a => a.type === 'file' && extValidas.test(a.name));
+                let imgPS2 = null, imgPS3 = null, imgXbox = null, imgWii = null;
+                imagenes.forEach(archivo => {
+                    const nombre = archivo.name.toLowerCase();
+                    const url = `https://raw.githubusercontent.com/${USER_GITHUB}/${REPO_ICONOS}/${ramaIconos}/${encodeURIComponent(archivo.name)}`;
+                    if (nombre.includes('ps3') || nombre.includes('playstation 3')) imgPS3 = url;
+                    else if (nombre.includes('ps2') || nombre.includes('play')) imgPS2 = url;
+                    if (nombre.includes('xbox')) imgXbox = url;
+                    if (nombre.includes('wii') || nombre.includes('nintendo')) imgWii = url;
+                });
+                if (imgPS2) document.getElementById('container-ps2').innerHTML = `<img src="${imgPS2}">`;
+                if (imgPS3) document.getElementById('container-ps3').innerHTML = `<img src="${imgPS3}">`;
+                if (imgXbox) document.getElementById('container-xbox').innerHTML = `<img src="${imgXbox}">`;
+                if (imgWii) document.getElementById('container-wii').innerHTML = `<img src="${imgWii}">`;
+            } catch(e) { console.warn("No se pudieron cargar los iconos:", e); }
+        }
+
+        function abrirConsola(consola) {
+            document.getElementById('home-screen').style.display = 'none';
+            if (consola === 'ps2') { document.getElementById('eco-ps2').classList.add('active'); if (datosPS2.length === 0) cargarTodo(); else renderPS2(); }
+            else if (consola === 'ps3') { document.getElementById('eco-ps3').classList.add('active'); if (datosPS3.length === 0) cargarTodo(); else renderPS3(); }
+            else if (consola === 'xbox') { document.getElementById('eco-xbox').classList.add('active'); if (datosXbox.length === 0) cargarTodo(); else renderXbox(); }
+            else { document.getElementById('eco-wii').classList.add('active'); if (datosWii.length === 0) cargarTodo(); else renderWii(); }
+            window.scrollTo(0,0);
+        }
+
+        function volverAlInicio() {
+            document.getElementById('home-screen').style.display = 'flex';
+            document.getElementById('eco-ps2').classList.remove('active');
+            document.getElementById('eco-ps3').classList.remove('active');
+            document.getElementById('eco-xbox').classList.remove('active');
+            document.getElementById('eco-wii').classList.remove('active');
+        }
+
+        function limpiarNombre(archivo) {
+            let n = archivo.replace(/\.(jpg|jpeg|png|gif|webp|jfif)$/i, '');
+            n = n.replace(/[_-]/g, ' ').replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '');
+            return n.replace(/\s+/g, ' ').trim();
+        }
+
+        function obtenerCategoria(titulo) {
+            const t = titulo.toLowerCase();
+            if (t.includes('mario')) return 'Mario Bros';
+            if (t.includes('dragon ball') || t.includes('dragonball') || t.includes('dbz') || t.includes('piccolo') || t.includes('budokai')) return 'Dragon Ball';
+            if (t.includes('resident evil') || t.includes('residen evil') || t.includes('re 4') || t.includes('re revelations')) return 'Resident Evil';
+            if (t.includes('sonic') && !t.includes('hypersonic') && !t.includes('hsx')) return 'Sonic';
+            if (t.includes('fifa') || t.includes('pes') || t.includes('efootball') || t.includes('wining') || t.includes('winning eleven') || t.includes('virtua pro') || t.includes('premier manager') || t.includes('lma manager')) return 'Fútbol';
+            if (PALABRAS_ACCION.some(p => t.includes(p))) return 'Acción';
+            if (t.includes('nfs') || t.includes('need for speed') || t.includes('burnout') || t.includes('midnight') || t.includes('gran turismo') || t.includes('racing') || t.includes('atv offroad') || t.includes('auto modellista') || t.includes('d1 grand prix') || t.includes('dakar') || t.includes('downhill') || t.includes('driver parallel') || t.includes('espn winter') || t.includes('ferrari f355') || t.includes('formula one') || t.includes('formula 1') || t.includes('hsx') || t.includes('hypersonic') || t.includes('jak x') || t.includes('mashed') || t.includes('micro machines') || t.includes('mx vs atv') || t.includes('rally fusion') || t.includes('rc revenge') || t.includes('score') || t.includes('sega rally') || t.includes('toca race') || t.includes('v rally') || t.includes('forza') || t.includes('rally') || t.includes('dirt') || t.includes('grid') || t.includes('f1 ') || t.includes('moto gp') || t.includes('motogp') || t.includes('project gotham') || t.includes('juiced') || t.includes('wrc') || t.includes('sonic & sega')) return 'Carreras';
+            if (t.includes('ben 10') || t.includes('bob esponja') || t.includes('shrek') || t.includes('cars') || t.includes('lego') || t.includes('toy story') || t.includes('minecraft') || t.includes('disney') || t.includes('plants vs') || t.includes('plantas contra') || t.includes('kirby') || t.includes('rayman') || t.includes('just dance') || t.includes('wii play') || t.includes('wii sports')) return 'Infantiles';
+            return 'Otros';
+        }
+
+        function getCoverUrl(archivo, repo, carpeta = "") {
+            let rama = ramaPS2;
+            if (repo === REPO_PS3_1 || repo === REPO_PS3_2) rama = ramaPS3;
+            if (repo === REPO_XBOX) rama = ramaXbox;
+            if (repo === REPO_WII) rama = ramaWii;
+            const ruta = carpeta ? `${carpeta}/${archivo}` : archivo;
+            return `https://raw.githubusercontent.com/${USER_GITHUB}/${repo}/${rama}/${ruta.split('/').map(encodeURIComponent).join('/')}`;
+        }
+
+        async function cargarTodo(forceRefresh = false) {
+            const cacheKey = 'juegos_digitales_cache_v33'; 
+            const cacheTimeKey = 'juegos_digitales_time_v33';
+            
+            if (forceRefresh) {
+                localStorage.removeItem(cacheKey);
+                localStorage.removeItem(cacheTimeKey);
+                document.getElementById('grid-ps2').innerHTML = '<p class="loading">Actualizando PS2... ⏳</p>';
+                document.getElementById('grid-ps3').innerHTML = '<p class="loading">Actualizando PS3... ⏳</p>';
+                document.getElementById('grid-xbox').innerHTML = '<p class="loading">Actualizando Xbox... ⏳</p>';
+                document.getElementById('grid-wii').innerHTML = '<p class="loading">Actualizando Wii... ⏳</p>';
+            }
+
+            const cached = localStorage.getItem(cacheKey);
+            const time = localStorage.getItem(cacheTimeKey);
+            
+            if (!forceRefresh && cached && time && (new Date().getTime() - time < 7200000)) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    datosPS2 = parsed.ps2 || []; datosPS3 = parsed.ps3 || []; datosXbox = parsed.xbox || []; datosWii = parsed.wii || [];
+                    ramaPS2 = parsed.ramaPS2 || "main"; ramaPS3 = parsed.ramaPS3 || "main"; ramaXbox = parsed.ramaXbox || "main"; ramaWii = parsed.ramaWii || "master";
+                    if (datosPS2.length > 0 || datosPS3.length > 0 || datosXbox.length > 0) { inicializarInterfaces(); return; }
+                } catch(e) {}
+            }
+
+            try {
+                const extValidas = /\.(jpg|jpeg|png|gif|webp|jfif)$/i;
+                let tempPS2 = [], tempPS3 = [], tempXbox = [], tempWii = [];
+
+                async function fetchRepo(repo, gridId) {
+                    try {
+                        let resRepo = await fetch(`https://api.github.com/repos/${USER_GITHUB}/${repo}`);
+                        if (!resRepo.ok) {
+                            if (repo === REPO_PS3_1) return null; // Para probar el otro nombre
+                            document.getElementById(gridId).innerHTML = `<div class="error-box">❌ El repositorio "${repo}" no existe o es privado.</div>`;
+                            return { datos: [], rama: "main" };
+                        }
+                        let infoRepo = await resRepo.json();
+                        let ramaActual = infoRepo.default_branch || "main";
+                        
+                        let resArbol = await fetch(`https://api.github.com/repos/${USER_GITHUB}/${repo}/git/trees/${ramaActual}?recursive=1`);
+                        if (!resArbol.ok) throw new Error("Fallo al leer el árbol");
+                        
+                        let arbol = await resArbol.json();
+                        let archivos = arbol.tree.filter(a => a.type === 'blob' && extValidas.test(a.path) && !a.path.toLowerCase().includes('logo') && !a.path.toLowerCase().includes('readme'));
+                        
+                        let datos = archivos.map(a => {
+                            let partes = a.path.split('/');
+                            let nombreArchivo = partes.pop();
+                            let carpeta = partes.join('/');
+                            let t = limpiarNombre(nombreArchivo);
+                            
+                            let tipo = "catalogo";
+                            let carpetaLower = carpeta.toLowerCase();
+                            if (carpetaLower.includes('novedad')) tipo = "novedad";
+                            else if (carpetaLower.includes('promocion')) tipo = "promocion";
+                            else if (carpetaLower.includes('emulador')) tipo = "emulador";
+
+                            return { archivo: nombreArchivo, title: t, categoria: obtenerCategoria(t), repo: repo, carpeta: carpeta, tipo: tipo, esTop: PALABRAS_TOP.some(p=>t.includes(p)) };
+                        });
+                        return { datos, rama: ramaActual };
+                    } catch(e) {
+                        if (repo === REPO_PS3_1) return null;
+                        document.getElementById(gridId).innerHTML = `<div class="error-box">❌ Error de conexión al cargar ${repo}.</div>`;
+                        return { datos: [], rama: "main" };
+                    }
+                }
+
+                // Buscador inteligente para PS3
+                let resPS3 = await fetchRepo(REPO_PS3_1, 'grid-ps3');
+                if (resPS3 === null) {
+                    resPS3 = await fetchRepo(REPO_PS3_2, 'grid-ps3');
+                    if (!resPS3 || resPS3 === null) resPS3 = { datos: [], rama: "main" };
+                }
+
+                const [resPS2, resXbox, resWii] = await Promise.all([
+                    fetchRepo(REPO_PS2, 'grid-ps2'),
+                    fetchRepo(REPO_XBOX, 'grid-xbox'),
+                    fetchRepo(REPO_WII, 'grid-wii')
+                ]);
+
+                datosPS2 = resPS2.datos.sort((a,b) => a.title.localeCompare(b.title));
+                datosPS3 = resPS3.datos.sort((a,b) => a.title.localeCompare(b.title));
+                datosXbox = resXbox.datos.sort((a,b) => a.title.localeCompare(b.title));
+                datosWii = resWii.datos.sort((a,b) => a.title.localeCompare(b.title));
+                
+                ramaPS2 = resPS2.rama; ramaPS3 = resPS3.rama; ramaXbox = resXbox.rama; ramaWii = resWii.rama;
+
+                if (datosPS2.length > 0 || datosPS3.length > 0 || datosXbox.length > 0 || datosWii.length > 0) {
+                    localStorage.setItem(cacheKey, JSON.stringify({ ps2: datosPS2, ps3: datosPS3, xbox: datosXbox, wii: datosWii, ramaPS2, ramaPS3, ramaXbox, ramaWii }));
+                    localStorage.setItem(cacheTimeKey, new Date().getTime().toString());
+                }
+
+                inicializarInterfaces();
+            } catch(e) { console.error(e); }
+        }
+
+        function inicializarInterfaces() {
+            const cats = ['Todos', 'Mario Bros', 'Dragon Ball', 'Sonic', 'Resident Evil', 'Fútbol', 'Carreras', 'Acción', 'Infantiles', 'Otros'];
+            generarCategorias('cats-ps2', cats, 'ps2'); generarCategorias('cats-ps3', cats, 'ps3');
+            generarCategorias('cats-xbox', cats, 'xbox'); generarCategorias('cats-wii', cats, 'wii');
+            renderPS2(); renderPS3(); renderXbox(); renderWii();
+        }
+
+        function generarCategorias(containerId, categorias, consola) {
+            const cont = document.getElementById(containerId);
+            const catActual = consola === 'ps2' ? catActualPS2 : (consola === 'ps3' ? catActualPS3 : (consola === 'xbox' ? catActualXbox : catActualWii));
+            cont.innerHTML = categorias.map(c => `<button class="cat-btn ${c === catActual ? 'active' : ''}" onclick="setCat('${consola}', '${c}')">${c}</button>`).join('');
+        }
+
+        function setCat(consola, cat) {
+            const cats = ['Todos', 'Mario Bros', 'Dragon Ball', 'Sonic', 'Resident Evil', 'Fútbol', 'Carreras', 'Acción', 'Infantiles', 'Otros'];
+            if (consola === 'ps2') { catActualPS2 = cat; generarCategorias('cats-ps2', cats, 'ps2'); renderPS2(); }
+            else if (consola === 'ps3') { catActualPS3 = cat; generarCategorias('cats-ps3', cats, 'ps3'); renderPS3(); }
+            else if (consola === 'xbox') { catActualXbox = cat; generarCategorias('cats-xbox', cats, 'xbox'); renderXbox(); }
+            else { catActualWii = cat; generarCategorias('cats-wii', cats, 'wii'); renderWii(); }
+        }
+
+        function cambiarTabPS2(tab) { tabActualPS2 = tab; document.querySelectorAll('#eco-ps2 .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab)); document.getElementById('filtros-ps2').classList.toggle('oculto', tab !== 'todos'); renderPS2(); }
+        function cambiarTabPS3(tab) { tabActualPS3 = tab; document.querySelectorAll('#eco-ps3 .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab)); document.getElementById('filtros-ps3').classList.toggle('oculto', tab !== 'todos'); renderPS3(); }
+        function cambiarTabXbox(tab) { tabActualXbox = tab; document.querySelectorAll('#eco-xbox .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab)); document.getElementById('filtros-xbox').classList.toggle('oculto', tab !== 'todos'); renderXbox(); }
+        function cambiarTabWii(tab) { tabActualWii = tab; document.querySelectorAll('#eco-wii .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab)); document.getElementById('filtros-wii').classList.toggle('oculto', tab !== 'todos'); renderWii(); }
+
+        function buscarPS2(txt) { busquedaPS2 = txt; renderPS2(); }
+        function buscarPS3(txt) { busquedaPS3 = txt; renderPS3(); }
+        function buscarXbox(txt) { busquedaXbox = txt; renderXbox(); }
+        function buscarWii(txt) { busquedaWii = txt; renderWii(); }
+
+        function renderPS2() {
+            const grid = document.getElementById('grid-ps2');
+            let f = datosPS2.filter(g => g.title.toLowerCase().includes(busquedaPS2.toLowerCase()));
+            if (tabActualPS2 === 'novedades') f = f.filter(g => g.tipo === 'novedad');
+            else if (tabActualPS2 === 'promociones') f = f.filter(g => g.tipo === 'promocion');
+            else if (tabActualPS2 === 'emuladores') f = f.filter(g => g.tipo === 'emulador');
+            else f = f.filter(g => g.tipo === 'catalogo');
+            if (tabActualPS2 === 'todos' && catActualPS2 !== 'Todos') f = f.filter(g => g.categoria === catActualPS2);
+            grid.innerHTML = f.length === 0 ? '<p class="loading">No hay resultados.</p>' : f.map(g => generarTarjeta(g)).join('');
+        }
+
+        function renderPS3() {
+            const grid = document.getElementById('grid-ps3');
+            let f = datosPS3.filter(g => g.title.toLowerCase().includes(busquedaPS3.toLowerCase()));
+            if (tabActualPS3 === 'novedades') f = f.filter(g => g.tipo === 'novedad');
+            else if (tabActualPS3 === 'promociones') f = f.filter(g => g.tipo === 'promocion');
+            else f = f.filter(g => g.tipo === 'catalogo');
+            if (tabActualPS3 === 'todos' && catActualPS3 !== 'Todos') f = f.filter(g => g.categoria === catActualPS3);
+            grid.innerHTML = f.length === 0 ? '<p class="loading">No hay resultados.</p>' : f.map(g => generarTarjeta(g)).join('');
+        }
+
+        function renderXbox() {
+            const grid = document.getElementById('grid-xbox');
+            let f = datosXbox.filter(g => g.title.toLowerCase().includes(busquedaXbox.toLowerCase()));
+            if (tabActualXbox === 'novedades') f = f.filter(g => g.tipo === 'novedad');
+            else if (tabActualXbox === 'promociones') f = f.filter(g => g.tipo === 'promocion');
+            else f = f.filter(g => g.tipo === 'catalogo');
+            if (tabActualXbox === 'todos' && catActualXbox !== 'Todos') f = f.filter(g => g.categoria === catActualXbox);
+            grid.innerHTML = f.length === 0 ? '<p class="loading">No hay resultados.</p>' : f.map(g => generarTarjeta(g)).join('');
+        }
+
+        function renderWii() {
+            const grid = document.getElementById('grid-wii');
+            let f = datosWii.filter(g => g.title.toLowerCase().includes(busquedaWii.toLowerCase()));
+            if (tabActualWii === 'novedades') f = f.filter(g => g.tipo === 'novedad');
+            else if (tabActualWii === 'promociones') f = f.filter(g => g.tipo === 'promocion');
+            else f = f.filter(g => g.tipo === 'catalogo');
+            if (tabActualWii === 'todos' && catActualWii !== 'Todos') f = f.filter(g => g.categoria === catActualWii);
+            grid.innerHTML = f.length === 0 ? '<p class="loading">No hay resultados.</p>' : f.map(g => generarTarjeta(g)).join('');
+        }
+
+        function generarTarjeta(juego) {
+            const url = getCoverUrl(juego.archivo, juego.repo, juego.carpeta);
+            let badges = '';
+            if (juego.tipo === 'novedad') badges += '<span class="badge-new">NUEVO</span>';
+            if (juego.tipo === 'promocion') badges += '<span class="badge-promo">🎁 PROMO</span>';
+            if (juego.esTop) badges += '<span class="badge-top">🔥 TOP</span>';
+            
+            const idUnico = juego.archivo + "_" + juego.repo;
+            const estaEnCarrito = carrito.find(i => (i.archivo + "_" + i.repo) === idUnico);
+            
+            let btnHTML = estaEnCarrito 
+                ? `<button class="btn btn-add en-carrito" disabled>✅ En lista</button>`
+                : `<button class="btn btn-add" onclick='agregarAlCarrito(${JSON.stringify(juego).replace(/'/g, "&#39;")})'>+ Agregar</button>`;
+
+            let videoHTML = '';
+            if (juego.tipo !== 'promocion') {
+                const query = juego.title + " gameplay " + juego.repo;
+                videoHTML = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" target="_blank" class="btn btn-video">▶ Video</a>`;
+            }
+
+            return `
+                <div class="card">
+                    <img src="${url}" alt="${juego.title}" loading="lazy" onclick="abrirZoom('${url}')" onerror="this.src='https://via.placeholder.com/300x400/333/888?text=Sin+Portada'">
+                    <div class="card-info">
+                        <p class="card-title">${juego.title}${badges}</p>
+                        <div class="btn-group">${btnHTML}${videoHTML}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function cargarCarrito() { const g = localStorage.getItem('carrito_digital'); if (g) carrito = JSON.parse(g); actualizarCarrito(); }
+        window.agregarAlCarrito = (juego) => { const id = juego.archivo + "_" + juego.repo; if (!carrito.find(i => (i.archivo + "_" + i.repo) === id)) { carrito.push(juego); localStorage.setItem('carrito_digital', JSON.stringify(carrito)); actualizarCarrito(); renderPS2(); renderPS3(); renderXbox(); renderWii(); } }
+        window.quitarDelCarrito = (id) => { carrito = carrito.filter(i => (i.archivo + "_" + i.repo) !== id); localStorage.setItem('carrito_digital', JSON.stringify(carrito)); actualizarCarrito(); renderPS2(); renderPS3(); renderXbox(); renderWii(); }
+
+        function actualizarCarrito() {
+            const badge = document.getElementById('cart-badge'), itemsCont = document.getElementById('cart-items'), totalCont = document.getElementById('cart-total'), breakdownCont = document.getElementById('cart-breakdown'), payBtn = document.getElementById('pay-btn');
+            const jPS2 = carrito.filter(i => i.repo === REPO_PS2), jPS3 = carrito.filter(i => i.repo === REPO_PS3_1 || i.repo === REPO_PS3_2), jXbox = carrito.filter(i => i.repo === REPO_XBOX), jWii = carrito.filter(i => i.repo === REPO_WII);
+            let total = 0, detalle = [];
+
+            if (jPS2.length > 0) { total += PRECIO_PS2; detalle.push(`Pack PS2: $${PRECIO_PS2}`); }
+            if (jPS3.length > 0) { const sub = (Math.floor(jPS3.length / 3) * PRECIO_PS3_COMBO) + ((jPS3.length % 3) * PRECIO_PS3_UNITARIO); total += sub; detalle.push(`PS3 (${jPS3.length} juegos): $${sub}`); }
+            if (jXbox.length > 0) { const sub = (Math.floor(jXbox.length / 3) * PRECIO_XBOX_COMBO) + ((jXbox.length % 3) * PRECIO_XBOX_UNITARIO); total += sub; detalle.push(`Xbox (${jXbox.length} juegos): $${sub}`); }
+            if (jWii.length > 0) { total += PRECIO_WII; detalle.push(`Pack Wii: $${PRECIO_WII}`); }
+
+            if (carrito.length > 0) {
+                badge.style.display = 'flex'; badge.textContent = carrito.length;
+                totalCont.innerHTML = `Total a pagar: <span style="color:var(--whatsapp)">$${total}</span>`;
+                breakdownCont.innerHTML = detalle.join(' | '); payBtn.style.display = 'flex';
+            } else {
+                badge.style.display = 'none'; totalCont.innerHTML = ''; breakdownCont.innerHTML = ''; payBtn.style.display = 'none';
+            }
+
+            if (carrito.length === 0) { itemsCont.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:20px;">El carrito está vacío.</p>'; return; }
+            itemsCont.innerHTML = carrito.map(item => {
+                let c = 'PS2'; if (item.repo === REPO_PS3_1 || item.repo === REPO_PS3_2) c = 'PS3'; if (item.repo === REPO_XBOX) c = 'Xbox'; if (item.repo === REPO_WII) c = 'Wii';
+                return `<div class="cart-item"><span><span style="color:#888; font-size:10px;">[${c}]</span> ${item.title}</span><button class="btn-remove" onclick="quitarDelCarrito('${(item.archivo + "_" + item.repo).replace(/'/g, "\\'")}')">X</button></div>`;
+            }).join('');
+        }
+
+        function abrirCarrito() { document.getElementById('cart-panel').classList.add('open'); document.getElementById('cart-overlay').classList.add('open'); }
+        function cerrarCarrito() { document.getElementById('cart-panel').classList.remove('open'); document.getElementById('cart-overlay').classList.remove('open'); }
+
+        function pagarPorWhatsApp() {
+            if (carrito.length === 0) return;
+            const jPS2 = carrito.filter(i => i.repo === REPO_PS2), jPS3 = carrito.filter(i => i.repo === REPO_PS3_1 || i.repo === REPO_PS3_2), jXbox = carrito.filter(i => i.repo === REPO_XBOX), jWii = carrito.filter(i => i.repo === REPO_WII);
+            let total = 0, msg = "¡Hola Juegos Digitales! Quiero hacer el siguiente pedido:\n\n";
+            carrito.forEach((item, i) => { let c = 'PS2'; if (item.repo === REPO_PS3_1 || item.repo === REPO_PS3_2) c = 'PS3'; if (item.repo === REPO_XBOX) c = 'Xbox'; if (item.repo === REPO_WII) c = 'Wii'; msg += `${i+1}. [${c}] ${item.title}\n`; });
+            msg += "\n--- RESUMEN ---\n";
+            if (jPS2.length > 0) { total += PRECIO_PS2; msg += `Pack PS2: $${PRECIO_PS2}\n`; }
+            if (jPS3.length > 0) { const sub = (Math.floor(jPS3.length / 3) * PRECIO_PS3_COMBO) + ((jPS3.length % 3) * PRECIO_PS3_UNITARIO); total += sub; msg += `PS3 (${jPS3.length} juegos): $${sub}\n`; }
+            if (jXbox.length > 0) { const sub = (Math.floor(jXbox.length / 3) * PRECIO_XBOX_COMBO) + ((jXbox.length % 3) * PRECIO_XBOX_UNITARIO); total += sub; msg += `Xbox (${jXbox.length} juegos): $${sub}\n`; }
+            if (jWii.length > 0) { total += PRECIO_WII; msg += `Pack Wii: $${PRECIO_WII}\n`; }
+            msg += `\nTotal a pagar: $${total} ARS\n\n¿Me pasás los datos para pagar? Gracias.`;
+            window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function compartirCatalogo() {
+            const texto = "¡Mirá este catálogo de juegos digitales de PS2, PS3, Xbox y Wii! Entrá acá: " + window.location.href;
+            if (navigator.share) navigator.share({ title: 'Catálogo Digital', text: texto }).catch(() => {});
+            else navigator.clipboard.writeText(texto).then(() => alert("¡Enlace copiado!"));
+        }
+
+        function abrirZoom(url) { document.getElementById('zoom-img').src = url; document.getElementById('zoom-modal').classList.add('open'); }
+        function cerrarZoom() { document.getElementById('zoom-modal').classList.remove('open'); }
+
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            document.getElementById('theme-toggle').textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        });
+
+        window.onload = () => {
+            if (localStorage.getItem('theme') === 'light') document.getElementById('theme-toggle').textContent = '☀️';
+            cargarIconos(); cargarCarrito(); cargarTodo();
+        };
+    </script>
+</body>
+</html>
