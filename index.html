@@ -67,7 +67,6 @@
         .ps3-theme .promo-ps3 { display: block; background: rgba(0, 55, 145, 0.15); border-color: var(--ps3-color); }
         .xbox-theme .promo-xbox { display: block; background: rgba(16, 124, 16, 0.15); border-color: var(--xbox-color); }
         .wii-theme .promo-wii { display: block; background: rgba(0, 162, 232, 0.15); border-color: var(--wii-color); }
-        .ps4-theme .promo-ps4 { display: block; background: rgba(37, 99, 235, 0.15); border-color: var(--ps4-color); }
 
         .search-container { max-width: 1300px; margin: 0 auto 15px auto; display: flex; flex-direction: column; gap: 10px; }
         .filtros-ps2, .filtros-ps3, .filtros-xbox, .filtros-wii, .filtros-ps4 { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.2s; }
@@ -238,7 +237,6 @@
     <!-- PS4 -->
     <div id="eco-ps4" class="ecosystem ps4-theme">
         <button class="back-btn" onclick="volverAlInicio()">← Volver al inicio</button>
-        <div class="promo-banner promo-ps4">🔥 Precios PS4: 1 juego x $1.500 | Combo de 3 juegos x $3.500</div>
         <div class="search-container">
             <div class="tabs-container">
                 <button class="tab-btn active" data-tab="todos" onclick="cambiarTabPS4('todos')">🎮 Catálogo PS4</button>
@@ -337,6 +335,10 @@
         
         const WHATSAPP_NUMERO = "5492975015255";
         const TTL_CACHE_MS = 10 * 60 * 1000; // 10 minutos (antes 2 horas)
+        // Videos fijos: si el título contiene alguna palabra de 'contiene' y es de esa consola, el botón abre ese video exacto.
+        const VIDEOS_FIJOS = [
+            { repo: REPO_PS2, contiene: ['n64', 'nintendo 64'], url: 'https://www.youtube.com/watch?v=osbbLAdpwZI' }
+        ];
         
         const PRECIO_PS2 = 10000; 
         const PRECIO_PS3_UNITARIO = 1500;
@@ -344,8 +346,6 @@
         const PRECIO_XBOX_UNITARIO = 1500;
         const PRECIO_XBOX_COMBO = 3500; 
         const PRECIO_WII = 10000;
-        const PRECIO_PS4_UNITARIO = 1500;
-        const PRECIO_PS4_COMBO = 3500; 
 
         let datosPS2 = [], datosPS3 = [], datosXbox = [], datosWii = [], datosPS4 = [], carrito = [];
         let ramaPS2 = "main", ramaPS3 = "main", ramaXbox = "main", ramaWii = "master", ramaPS4 = "main", ramaIconos = "main";
@@ -641,9 +641,12 @@
                 : `<button class="btn btn-add" onclick='agregarAlCarrito(${JSON.stringify(juego).replace(/'/g, "&#39;")})'>+ Agregar</button>`;
 
             let videoHTML = '';
-            if (juego.tipo !== 'promocion') {
-                const query = juego.title + " gameplay " + juego.repo;
-                videoHTML = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}" target="_blank" class="btn btn-video">▶ Video</a>`;
+            const fijo = videoFijo(juego);
+            if (fijo) {
+                videoHTML = `<a href="${fijo}" target="_blank" rel="noopener" class="btn btn-video">▶ Video</a>`;
+            } else if (juego.tipo === 'catalogo' || juego.tipo === 'novedad') {
+                const query = `${juego.title} ${consolaDe(juego.repo)} gameplay -trailer -review -reseña`;
+                videoHTML = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D" target="_blank" rel="noopener" class="btn btn-video">▶ Video</a>`;
             }
 
             return `
@@ -655,6 +658,20 @@
                     </div>
                 </div>
             `;
+        }
+
+        function videoFijo(juego) {
+            const t = juego.title.toLowerCase();
+            const v = VIDEOS_FIJOS.find(v => v.repo === juego.repo && v.contiene.some(p => t.includes(p)));
+            return v ? v.url : null;
+        }
+
+        function consolaDe(repo) {
+            if (repo === REPO_PS3_1 || repo === REPO_PS3_2) return 'PS3';
+            if (repo === REPO_PS4) return 'PS4';
+            if (repo === REPO_XBOX) return 'Xbox';
+            if (repo === REPO_WII) return 'Wii';
+            return 'PS2';
         }
 
         function cargarCarrito() { const g = localStorage.getItem('carrito_digital'); if (g) carrito = JSON.parse(g); actualizarCarrito(); }
@@ -670,11 +687,11 @@
             if (jPS3.length > 0) { const sub = (Math.floor(jPS3.length / 3) * PRECIO_PS3_COMBO) + ((jPS3.length % 3) * PRECIO_PS3_UNITARIO); total += sub; detalle.push(`PS3 (${jPS3.length} juegos): $${sub}`); }
             if (jXbox.length > 0) { const sub = (Math.floor(jXbox.length / 3) * PRECIO_XBOX_COMBO) + ((jXbox.length % 3) * PRECIO_XBOX_UNITARIO); total += sub; detalle.push(`Xbox (${jXbox.length} juegos): $${sub}`); }
             if (jWii.length > 0) { total += PRECIO_WII; detalle.push(`Pack Wii: $${PRECIO_WII}`); }
-            if (jPS4.length > 0) { const sub = (Math.floor(jPS4.length / 3) * PRECIO_PS4_COMBO) + ((jPS4.length % 3) * PRECIO_PS4_UNITARIO); total += sub; detalle.push(`PS4 (${jPS4.length} juegos): $${sub}`); }
+            if (jPS4.length > 0) { detalle.push(`PS4 (${jPS4.length} juegos)`); }
 
             if (carrito.length > 0) {
                 badge.style.display = 'flex'; badge.textContent = carrito.length;
-                totalCont.innerHTML = `Total a pagar: <span style="color:var(--whatsapp)">$${total}</span>`;
+                totalCont.innerHTML = total > 0 ? `Total a pagar: <span style="color:var(--whatsapp)">$${total}</span>` : '';
                 breakdownCont.innerHTML = detalle.join(' | '); payBtn.style.display = 'flex';
             } else {
                 badge.style.display = 'none'; totalCont.innerHTML = ''; breakdownCont.innerHTML = ''; payBtn.style.display = 'none';
@@ -700,8 +717,8 @@
             if (jPS3.length > 0) { const sub = (Math.floor(jPS3.length / 3) * PRECIO_PS3_COMBO) + ((jPS3.length % 3) * PRECIO_PS3_UNITARIO); total += sub; msg += `PS3 (${jPS3.length} juegos): $${sub}\n`; }
             if (jXbox.length > 0) { const sub = (Math.floor(jXbox.length / 3) * PRECIO_XBOX_COMBO) + ((jXbox.length % 3) * PRECIO_XBOX_UNITARIO); total += sub; msg += `Xbox (${jXbox.length} juegos): $${sub}\n`; }
             if (jWii.length > 0) { total += PRECIO_WII; msg += `Pack Wii: $${PRECIO_WII}\n`; }
-            if (jPS4.length > 0) { const sub = (Math.floor(jPS4.length / 3) * PRECIO_PS4_COMBO) + ((jPS4.length % 3) * PRECIO_PS4_UNITARIO); total += sub; msg += `PS4 (${jPS4.length} juegos): $${sub}\n`; }
-            msg += `\nTotal a pagar: $${total} ARS\n\n¿Me pasás los datos para pagar? Gracias.`;
+            if (jPS4.length > 0) { msg += `PS4 (${jPS4.length} juegos)\n`; }
+            msg += total > 0 ? `\nTotal a pagar: $${total} ARS\n\n¿Me pasás los datos para pagar? Gracias.` : `\n¿Me pasás los datos para continuar? Gracias.`;
             window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
